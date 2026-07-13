@@ -28,6 +28,10 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .topbar{position:sticky;top:0;z-index:50;background:linear-gradient(100deg,#1B3A6B 0%,#2C4E88 42%,#C8386F 100%);color:#fff;border-bottom:3px solid #F06595}
 .topbar-in{max-width:1060px;margin:0 auto;padding:11px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .brand{display:flex;align-items:center;gap:9px;margin-right:auto}
+.avatar{width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid var(--line);background:#fff;display:block}
+.avatar-ph{width:96px;height:96px;border-radius:50%;border:3px dashed var(--line);background:var(--orange-soft);display:grid;place-items:center;color:#C8386F;font-size:12px;text-align:center;line-height:1.3}
+.avatar-sm{width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid var(--line);background:#fff;flex:none}
+.avatar-md{width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid var(--line);background:#fff;flex:none}
 .logos{display:flex;align-items:center;gap:6px}
 .logos img{height:36px;width:36px;object-fit:contain;background:#fff;border-radius:9px;padding:3px;flex:none}
 .print-logos{display:flex;justify-content:center;gap:14px;margin-bottom:8px}
@@ -159,6 +163,18 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
   <div class="two">
     <div class="card"><div class="pad">
       <h3>ประวัตินักศึกษา</h3>
+      <div style="display:flex;gap:14px;align-items:center;margin-bottom:14px">
+        <div id="mPhotoBox"></div>
+        <div>
+          <div class="small" style="font-weight:600">รูปนักศึกษา</div>
+          <div class="small muted" style="margin:2px 0 8px">ระบบย่อรูปให้อัตโนมัติเหลือประมาณ 20 KB</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <label class="btn sm" style="width:auto">เลือกรูป<input type="file" id="mPhoto" accept="image/*" hidden></label>
+            <button class="btn sm danger" id="btnDelPhoto" style="display:none">ลบรูป</button>
+          </div>
+          <div id="photoMsg" class="small" style="margin-top:6px"></div>
+        </div>
+      </div>
       <label class="f"><span>รหัสนักศึกษา</span><input id="mId" placeholder="เช่น 65041234567"></label>
       <label class="f"><span>ชื่อ-สกุล</span><input id="mName" placeholder="นายสมชาย ใจดี"></label>
       <label class="f"><span>กลุ่มวิชาเอกที่เลือกเรียน</span><select id="mTrack"></select></label>
@@ -361,12 +377,53 @@ document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{
 $("#mTrack").innerHTML=Object.keys(TRACKS).map(k=>`<option value="${k}">${TRACKS[k].name}</option>`).join("");
 $("#oGrade").innerHTML=[...Object.keys(GP),...OTHERG].map(g=>`<option>${g}</option>`).join("");
 $("#allCodes").innerHTML=Object.keys(INDEX).map(c=>`<option value="${c}">${INDEX[c].name}</option>`).join("");
+/* ---- รูปนักศึกษา: ครอบเป็นสี่เหลี่ยมจัตุรัส ย่อ 256px แล้วบีบอัดจนเล็กกว่า ~40KB ---- */
+function compressPhoto(file,box=256,limit=40000){
+  return new Promise((res,rej)=>{
+    if(file.size>12*1024*1024) return rej(new Error("ไฟล์ใหญ่เกิน 12 MB"));
+    const img=new Image();
+    img.onerror=()=>rej(new Error("เปิดไฟล์รูปไม่ได้"));
+    img.onload=()=>{
+      const side=Math.min(img.width,img.height);
+      const cv=document.createElement("canvas");
+      cv.width=cv.height=box;
+      const cx=cv.getContext("2d");
+      cx.drawImage(img,(img.width-side)/2,(img.height-side)/2,side,side,0,0,box,box);
+      let q=0.72,url=cv.toDataURL("image/jpeg",q);
+      while(url.length>limit*1.37 && q>0.35){ q-=0.1; url=cv.toDataURL("image/jpeg",q); }
+      URL.revokeObjectURL(img.src);
+      res(url);
+    };
+    img.src=URL.createObjectURL(file);
+  });
+}
+function renderPhoto(){
+  const ph=DB.me.photo;
+  $("#mPhotoBox").innerHTML = ph
+    ? `<img src="${ph}" class="avatar" alt="รูปนักศึกษา">`
+    : `<div class="avatar-ph">ยังไม่มี<br>รูป</div>`;
+  $("#btnDelPhoto").style.display = ph?"inline-block":"none";
+}
+$("#mPhoto").onchange = async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const msg=$("#photoMsg");
+  msg.innerHTML=`<span class="pill warn">กำลังย่อรูป...</span>`;
+  try{
+    const url=await compressPhoto(f);
+    DB.me.photo=url; save(); renderAll();
+    $("#photoMsg").innerHTML=`<span class="pill ok">บันทึกรูปแล้ว (${Math.round(url.length*0.75/1024)} KB)</span>`;
+  }catch(err){ msg.innerHTML=`<span class="pill bad">${esc(err.message)}</span>`; }
+  e.target.value="";
+};
+$("#btnDelPhoto").onclick=()=>{ delete DB.me.photo; save(); renderAll(); };
+
 function renderMe(){
   $("#mId").value=DB.me.id;$("#mName").value=DB.me.name;
   $("#mTrack").value=DB.me.track||"JN";$("#mYear").value=DB.me.year||"";
+  renderPhoto();
 }
 $("#btnSaveMe").onclick=()=>{
-  DB.me={id:$("#mId").value.trim(),name:$("#mName").value.trim(),track:$("#mTrack").value,year:$("#mYear").value.trim()};
+  DB.me={...DB.me,id:$("#mId").value.trim(),name:$("#mName").value.trim(),track:$("#mTrack").value,year:$("#mYear").value.trim()};
   save();renderAll();alert("บันทึกแล้ว — ไปหน้า “กรอกเกรด” ได้เลย");
 };
 $("#btnExp").onclick=()=>{
@@ -760,6 +817,7 @@ function renderResult(){
 
   <div class="card"><div class="pad">
     <div class="big">
+      ${DB.me.photo?`<img src="${DB.me.photo}" class="avatar-md" alt="">`:""}
       <div>
         <div class="display" style="font-size:20px">${esc(DB.me.name||"— ยังไม่ได้กรอกชื่อ —")}</div>
         <div class="small muted">${esc(DB.me.id||"")} · กลุ่มวิชาเอก${TRACKS[a.track].name}</div>
