@@ -134,6 +134,25 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 }
 .print-head{text-align:center;border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:14px}
 .print-head b{display:block;font-family:"Bai Jamjuree";font-size:19px}
+
+/* ---------- เครดิตผู้พัฒนา ---------- */
+.credit{
+  max-width:1180px;margin:26px auto 0;padding:16px 16px 26px;
+  border-top:1px solid var(--line);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+  font-size:12.5px;color:var(--ink-2);
+}
+.credit .who{font-weight:600;color:var(--ink)}
+.credit .bar{width:3px;height:26px;border-radius:2px;
+  background:linear-gradient(#1B3A6B,#C8386F);flex:none}
+.credit .sp{margin-left:auto}
+.print-credit{display:none}
+@media print{
+  .credit{display:none}
+  .print-credit{display:block;margin-top:20px;padding-top:8px;border-top:1px solid #999;
+    font-size:11px;text-align:center;color:#555}
+}
+
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -277,6 +296,16 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 </section>
 
 </main>
+
+<footer class="credit">
+  <span class="bar"></span>
+  <span>
+    <span class="who">พัฒนาโดย ผศ.ดร.เสกสรร สายสีสด</span><br>
+    สาขาวิชานิเทศศาสตร์ คณะวิทยาการจัดการ มหาวิทยาลัยราชภัฏอุดรธานี
+  </span>
+  <span class="sp">ระบบสารสนเทศเช็คผลการสำเร็จการศึกษา · เวอร์ชัน 1.0 (2569)</span>
+</footer>
+
 
 <script>
 /* ================= หลักสูตรนิเทศศาสตรบัณฑิต 128 นก. ================= */
@@ -850,7 +879,8 @@ function renderResult(){
     </div>
   </div>
 
-  <p class="small muted">ผลนี้เป็นการตรวจสอบเบื้องต้นจากข้อมูลที่นักศึกษากรอกเอง ผลอย่างเป็นทางการยึดตามสำนักส่งเสริมวิชาการและงานทะเบียน</p>`;
+  <p class="small muted">ผลนี้เป็นการตรวจสอบเบื้องต้นจากข้อมูลที่นักศึกษากรอกเอง ผลอย่างเป็นทางการยึดตามสำนักส่งเสริมวิชาการและงานทะเบียน</p>
+  <div class="print-credit">ระบบสารสนเทศเช็คผลการสำเร็จการศึกษา — พัฒนาโดย ผศ.ดร.เสกสรร สายสีสด สาขาวิชานิเทศศาสตร์ คณะวิทยาการจัดการ มหาวิทยาลัยราชภัฏอุดรธานี</div>`;
 }
 $("#btnPrint").onclick=()=>window.print();
 $("#btnCsv").onclick=()=>{
