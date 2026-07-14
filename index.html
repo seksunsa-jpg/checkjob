@@ -262,16 +262,22 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
     <div id="pPreview" style="margin-top:12px"></div>
   </div></div>
 
+  <div id="lockBar"></div>
   <div id="fillList"></div>
 
   <div class="card"><div class="pad">
     <h3>วิชาอื่น ๆ ที่เรียน <span class="small muted" style="font-weight:400">(วิชาที่สัมพันธ์ · เลือกเสรี · วิชาข้ามกลุ่มเอก)</span></h3>
-    <div style="display:grid;grid-template-columns:1fr 2fr 70px 90px 100px auto;gap:8px;align-items:end" id="addRow">
+    <div style="display:grid;grid-template-columns:1fr 1.8fr 62px 82px 92px 130px auto;gap:8px;align-items:end" id="addRow">
       <label class="f" style="margin:0"><span>รหัสวิชา</span><input id="oCode" list="allCodes" placeholder="CA33203"></label>
       <label class="f" style="margin:0"><span>ชื่อวิชา</span><input id="oName" placeholder="เว้นว่างได้"></label>
       <label class="f" style="margin:0"><span>นก.</span><input id="oCr" type="number" min="1" max="9" placeholder="3"></label>
       <label class="f" style="margin:0"><span>เกรด</span><select id="oGrade"></select></label>
       <label class="f" style="margin:0"><span>ภาคเรียน</span><input id="oTerm" placeholder="1/2567"></label>
+      <label class="f" style="margin:0"><span>นับเป็นหมวด</span><select id="oSec">
+        <option value="">อัตโนมัติ</option>
+        <option value="RELATED">วิชาที่สัมพันธ์</option>
+        <option value="FREE">เลือกเสรี</option>
+      </select></label>
       <button class="btn primary" id="btnAddOther">เพิ่ม</button>
     </div>
     <datalist id="allCodes"></datalist>
@@ -364,6 +370,7 @@ function audit(){
   ORDER.forEach(k=>{const s=CUR[k];
     sec[k]={label:s.label,need:s.need,color:s.color,earned:0,taken:[],plan:s.track?(s.courses[track]||[]):s.courses};});
   let gp=0,gc=0,rawPass=0;const pending=[];
+  const auto=[];
   DB.grades.forEach(r=>{
     const g=(r.grade||"").toUpperCase(),cr=+r.credits||0;
     if(g in GP){gp+=GP[g]*cr;gc+=cr;}
@@ -372,8 +379,14 @@ function audit(){
     rawPass+=cr;
     const i=INDEX[r.code];let t=null;
     if(i&&(!i.track||i.track===track))t=i.sec;
-    if(!t){ if(sec.RELATED.earned<sec.RELATED.need)t="RELATED";
-            else if(sec.FREE.earned<sec.FREE.need)t="FREE"; else return; }
+    if(!t && (r.bucket==="RELATED"||r.bucket==="FREE")) t=r.bucket;   /* นักศึกษาระบุเอง */
+    if(!t){ auto.push({r,cr}); return; }
+    sec[t].earned+=cr;sec[t].taken.push(r);
+  });
+  auto.forEach(({r,cr})=>{                                            /* ที่เหลือเติมอัตโนมัติ */
+    let t = sec.RELATED.earned<sec.RELATED.need ? "RELATED"
+          : sec.FREE.earned<sec.FREE.need ? "FREE" : null;
+    if(!t) return;
     sec[t].earned+=cr;sec[t].taken.push(r);
   });
   const missing=[];
@@ -501,8 +514,28 @@ function printLogos(){
 
 /* ================= 2) กรอกเกรด ================= */
 const GOPTS=`<option value="">—</option>`+[...Object.keys(GP),...OTHERG].map(g=>`<option>${g}</option>`).join("");
+function renderLock(){
+  const on=!!DB.lock;
+  $("#lockBar").innerHTML=`<div class="card"><div class="pad" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+    <span style="font-size:20px">${on?"🔒":"✏️"}</span>
+    <div style="flex:1;min-width:220px">
+      <div style="font-weight:600">${on?"เกรดถูกล็อกไว้ตามไฟล์ผลการเรียน":"โหมดกรอกเกรดเอง"}</div>
+      <div class="small muted">${on
+        ? "แก้ไขไม่ได้ เพื่อให้ผลตรงกับใบแจ้งผลการเรียนที่นำเข้ามา"
+        : "เลือกเกรดได้เอง — เมื่อกรอกครบแล้วแนะนำให้กดล็อกไว้ กันแก้ผิดโดยไม่ตั้งใจ"}</div>
+    </div>
+    <button class="btn ${on?"":"primary"}" id="btnLock">${on?"ปลดล็อกเพื่อแก้ไข":"ล็อกเกรด"}</button>
+  </div></div>`;
+  $("#btnLock").onclick=()=>{
+    if(!DB.lock && !confirm("ล็อกเกรดไว้ ไม่ให้แก้ไขโดยไม่ตั้งใจใช่ไหม?")) return;
+    if(DB.lock && !confirm("ปลดล็อกเพื่อแก้เกรดเอง? ผลอาจไม่ตรงกับใบแจ้งผลการเรียน")) return;
+    DB.lock=!DB.lock; save(); renderAll();
+  };
+}
 function renderFill(){
   const track=DB.me.track||"JN";
+  renderLock();
+  const locked=!!DB.lock;
   const a=audit();
   $("#fillCredit").textContent=a.earned;
   $("#fillGpa").textContent=a.gpa===null?"—":a.gpa.toFixed(2);
@@ -525,13 +558,18 @@ function renderFill(){
       ${list.map(c=>{
         const g=gr(c[0]),v=g?g.grade:"",t=g?(g.term||""):"";
         const cls=v?((v in GP&&v!=="F")?"done":"fail"):"";
+        const gCell = locked
+          ? `<div class="g">${v?`<span class="pill ${(v in GP&&v!=="F")?"ok":"bad"}">${esc(v)}</span>`:`<span class="small muted">—</span>`}</div>`
+          : `<select class="g" data-code="${c[0]}" data-name="${esc(c[1])}" data-cr="${c[2]}">${
+              GOPTS.replace(`<option>${v}</option>`,`<option selected>${v}</option>`)}</select>`;
+        const tCell = locked
+          ? `<div class="t small muted">${esc(t||"—")}</div>`
+          : `<input class="t" data-term="${c[0]}" value="${esc(t)}" placeholder="ภาคเรียน">`;
         return `<div class="crow ${cls}">
           <div class="cd">${c[0]}</div>
           <div class="cn">${esc(c[1])}</div>
           <div class="cc">${c[2]}</div>
-          <select class="g" data-code="${c[0]}" data-name="${esc(c[1])}" data-cr="${c[2]}">${
-            GOPTS.replace(`<option>${v}</option>`,`<option selected>${v}</option>`)}</select>
-          <input class="t" data-term="${c[0]}" value="${esc(t)}" placeholder="ภาคเรียน">
+          ${gCell}${tCell}
         </div>`;}).join("")}
     </div></div>`;}).join("");
 
@@ -546,21 +584,33 @@ function renderFill(){
 
   /* วิชาอื่น ๆ */
   const others=DB.grades.filter(r=>{const i=INDEX[r.code];return !i||(i.track&&i.track!==track);});
-  $("#otherList").innerHTML=others.length?`<table><thead><tr><th>รหัส</th><th>ชื่อวิชา</th><th class="num">นก.</th><th>เกรด</th><th>ภาคเรียน</th><th></th></tr></thead><tbody>${
+  const A=audit();
+  const secOf=c=>{ let n="—"; ["RELATED","FREE"].forEach(k=>{ if(A.sec[k].taken.some(x=>x.code===c)) n=CUR[k].label; }); return n; };
+  $("#otherList").innerHTML=others.length?`<table><thead><tr><th>รหัส</th><th>ชื่อวิชา</th><th class="num">นก.</th><th>เกรด</th><th>ภาคเรียน</th><th>นับเป็นหมวด</th><th></th></tr></thead><tbody>${
     others.map(r=>`<tr>
       <td><b>${esc(r.code)}</b></td><td>${esc(r.name||INDEX[r.code]?.name||"—")}</td>
       <td class="num">${r.credits}</td>
       <td><span class="pill ${(r.grade in GP&&r.grade!=="F")?"ok":"bad"}">${esc(r.grade)}</span></td>
       <td class="small muted">${esc(r.term||"—")}</td>
-      <td><button class="btn sm danger" data-rm="${esc(r.code)}">ลบ</button></td></tr>`).join("")}</tbody></table>`
+      <td><select data-sec="${esc(r.code)}" style="width:132px;padding:3px 6px">
+        <option value="" ${!r.bucket?"selected":""}>อัตโนมัติ (${esc(secOf(r.code))})</option>
+        <option value="RELATED" ${r.bucket==="RELATED"?"selected":""}>วิชาที่สัมพันธ์</option>
+        <option value="FREE" ${r.bucket==="FREE"?"selected":""}>เลือกเสรี</option>
+      </select></td>
+      <td>${locked?"":`<button class="btn sm danger" data-rm="${esc(r.code)}">ลบ</button>`}</td></tr>`).join("")}</tbody></table>
+      <div class="note" style="margin-top:10px">ถ้าระบบจัดหมวดผิด เช่น วิชาที่ลงเป็น <b>เลือกเสรี</b> ถูกนับเป็นวิชาที่สัมพันธ์ ให้เปลี่ยนในช่อง "นับเป็นหมวด" ได้เลย (แก้ได้แม้เกรดถูกล็อก)</div>`
     :`<p class="small muted" style="margin:0">ยังไม่มีวิชาอื่น — วิชาที่สัมพันธ์ (9 นก.) และเลือกเสรี (6 นก.) เพิ่มได้ที่ช่องด้านบน</p>`;
   $("#otherList").querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{
     DB.grades=DB.grades.filter(g=>g.code!==b.dataset.rm);save();renderAll();});
+  $("#otherList").querySelectorAll("[data-sec]").forEach(sl=>sl.onchange=()=>{
+    const g=gr(sl.dataset.sec); if(!g) return;
+    if(sl.value) g.bucket=sl.value; else delete g.bucket;
+    save(); renderAll();});
 }
 function setGrade(code,name,cr,grade,term){
   const i=DB.grades.findIndex(g=>g.code===code);
   if(!grade){ if(i>=0)DB.grades.splice(i,1); }
-  else if(i>=0){ DB.grades[i].grade=grade; DB.grades[i].term=term||DB.grades[i].term||""; }
+  else if(i>=0){ DB.grades[i].grade=grade; DB.grades[i].term=term||DB.grades[i].term||""; if(cr) DB.grades[i].credits=cr; }
   else DB.grades.push({code,name,credits:cr,grade,term:term||""});
   save();
 }
@@ -570,6 +620,9 @@ $("#btnAddOther").onclick=()=>{
   if(gr(code))return alert("มีวิชานี้อยู่แล้ว");
   const i=INDEX[code];
   setGrade(code,$("#oName").value.trim()||i?.name||"",+$("#oCr").value||i?.credit||3,$("#oGrade").value,$("#oTerm").value.trim());
+  const b=$("#oSec").value, row=gr(code);
+  if(row){ if(b) row.bucket=b; else delete row.bucket; }
+  save();
   $("#oCode").value="";$("#oName").value="";$("#oCr").value="";
   renderAll();
 };
@@ -613,17 +666,27 @@ function parseLine(raw){
   if(!grade) grade=scan(rest.split(/[\s\t|,]+/).filter(Boolean).reverse());
   if(!credit){ const d=rest.match(/(?:^|\s)([1-9])(?:\s|$)/); if(d) credit=+d[1]; }
   const info=INDEX[code];
-  return {code,name:info?info.name:rest.replace(/[\d()\-\s]+$/,"").trim(),
-          credits:credit||info?.credit||3, grade, known:!!info};
+  let nm = info ? info.name
+        : (cm ? rest.slice(0,cm.index) : rest)
+            .replace(/[\d()\-\s]+$/,"").replace(/\s+/g," ").trim();
+  return {code,name:nm, credits:credit||info?.credit||3, grade, known:!!info};
+}
+function detectTerm(line){
+  let m=line.match(/ภาคเรียนที่\s*([1-3])\D{0,20}?(25\d{2})/);
+  if(m) return `${m[1]}/${m[2]}`;
+  m=line.match(/(?:^|\s)([1-3])\s*\/\s*(25\d{2})(?:\s|$)/);
+  if(m) return `${m[1]}/${m[2]}`;
+  return "";
 }
 function parseText(text){
-  const out=[],bad=[];
+  const out=[],bad=[]; let cur="";
   text.split(/\r?\n/).forEach(l=>{
     const raw=l.trim(); if(!raw) return;
     const r=parseLine(raw);
-    if(!r){ if(raw.length>4) bad.push(raw); return; }
+    if(!r){ const t=detectTerm(raw); if(t) cur=t; else if(raw.length>4) bad.push(raw); return; }
+    if(cur) r.term=cur;
     const ex=out.find(x=>x.code===r.code);
-    if(ex){ if(!ex.grade&&r.grade) ex.grade=r.grade; }
+    if(ex){ if(!ex.grade&&r.grade) ex.grade=r.grade; if(!ex.term&&r.term) ex.term=r.term; }
     else out.push(r);
   });
   return {out,bad};
@@ -634,7 +697,7 @@ function mergeRuns(rA,rB,rawTexts){
   [...rA.out,...rB.out].forEach(r=>{
     const e=map.get(r.code);
     if(!e) map.set(r.code,{...r});
-    else { if(!e.grade&&r.grade) e.grade=r.grade; if(!e.credits&&r.credits) e.credits=r.credits; }
+    else { if(!e.grade&&r.grade) e.grade=r.grade; if(!e.credits&&r.credits) e.credits=r.credits; if(!e.term&&r.term) e.term=r.term; }
   });
   const out=[...map.values()];
   if(out.some(r=>!r.grade)){
@@ -653,14 +716,16 @@ function showPreview(out,bad,term,src){
   if(!out.length){ $("#pPreview").innerHTML=`<div class="note">อ่านข้อมูลไม่ได้ — ต้องมีรหัสวิชา (เช่น CA31103) อยู่ในแต่ละบรรทัด</div>`; return; }
   const noGrade=out.filter(r=>!r.grade).length;
   $("#pPreview").innerHTML=`
-    <div class="small muted" style="margin-bottom:6px">อ่านได้ ${out.length} วิชา${src?` จาก${src}`:""} — ตรวจเกรดให้ถูกต้องก่อนบันทึก</div>
+    <div class="small muted" style="margin-bottom:6px">อ่านได้ ${out.length} วิชา${src?` จาก${src}`:""}${
+      out.some(r=>r.term)?` · พบภาคเรียน <b>${esc([...new Set(out.filter(r=>r.term).map(r=>r.term))].join(", "))}</b> ในไฟล์`:""} — ตรวจก่อนบันทึก</div>
     ${noGrade?`<div class="note" style="margin-bottom:8px">อ่านเกรดไม่ได้ ${noGrade} วิชา — เลือกเกรดเองในตารางด้านล่างได้เลย</div>`:""}
-    <table><thead><tr><th>รหัสวิชา</th><th>ชื่อวิชา</th><th class="num">นก.</th><th>เกรด</th><th>สถานะ</th></tr></thead>
+    <table><thead><tr><th>รหัสวิชา</th><th>ชื่อวิชา</th><th class="num">นก.</th><th>เกรด</th><th>ภาคเรียน</th><th>สถานะ</th></tr></thead>
     <tbody>${out.map((r,i)=>`<tr>
       <td><b>${esc(r.code)}</b></td><td>${esc(r.name||"—")}</td>
       <td class="num"><input type="number" min="1" max="9" value="${r.credits}" data-pc="${i}" style="width:56px;padding:3px 6px"></td>
       <td><select data-pg="${i}" style="width:80px;padding:3px 6px;${r.grade?"":"border-color:var(--red)"}">${
         ['',...ALLG].map(g=>`<option ${g===r.grade?"selected":""}>${g}</option>`).join("")}</select></td>
+      <td><input value="${esc(r.term||term||"")}" data-pt="${i}" placeholder="1/2568" style="width:82px;padding:3px 6px"></td>
       <td class="small ${r.known?"muted":""}">${r.known?"อยู่ในหลักสูตร":(gr(r.code)?"มีอยู่แล้ว จะเขียนทับ":"วิชานอกแผน → นับเป็นสัมพันธ์/เสรี")}</td>
     </tr>`).join("")}</tbody></table>
     <div style="display:flex;gap:8px;margin-top:12px">
@@ -670,12 +735,14 @@ function showPreview(out,bad,term,src){
   $("#pPreview").querySelectorAll("[data-pg]").forEach(sl=>sl.onchange=()=>{
     PENDING[+sl.dataset.pg].grade=sl.value; sl.style.borderColor=sl.value?"":"var(--red)";});
   $("#pPreview").querySelectorAll("[data-pc]").forEach(ip=>ip.onchange=()=>PENDING[+ip.dataset.pc].credits=+ip.value||3);
+  $("#pPreview").querySelectorAll("[data-pt]").forEach(ip=>ip.onchange=()=>PENDING[+ip.dataset.pt].term=ip.value.trim());
   $("#btnCommit").onclick=()=>{
     const ok=PENDING.filter(r=>r.grade);
     if(!ok.length) return alert("ยังไม่ได้เลือกเกรดสักวิชา");
-    ok.forEach(r=>setGrade(r.code,r.name,r.credits,r.grade,term));
+    ok.forEach(r=>setGrade(r.code,r.name,r.credits,r.grade,r.term||term));
+    DB.lock=true; save();
     $("#paste").value=""; $("#pPreview").innerHTML=""; PENDING=[];
-    renderAll(); alert(`บันทึกแล้ว ${ok.length} วิชา`);
+    renderAll(); alert(`บันทึกแล้ว ${ok.length} วิชา — ระบบล็อกเกรดไว้ให้ตรงกับไฟล์แล้ว`);
   };
   $("#btnCancelPaste").onclick=()=>{ $("#pPreview").innerHTML=""; PENDING=[]; };
 }
