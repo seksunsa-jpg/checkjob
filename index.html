@@ -166,7 +166,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
     </div>
     <nav id="tabs">
       <button data-p="me" aria-current="true">1 · ข้อมูลของฉัน</button>
-      <button data-p="fill">2 · กรอกเกรด</button>
+      <button data-p="fill">2 · นำเข้าผลการเรียน</button>
       <button data-p="term">3 · ดูรายภาคเรียน</button>
       <button data-p="result">4 · ผลเช็คจบ</button>
       <button id="btnInstall" style="display:none;background:#fff;color:#C8386F;border:0;border-radius:999px;padding:6px 14px;font-weight:600;cursor:pointer">⤓ ติดตั้งแอป</button>
@@ -204,8 +204,8 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
       <h3>ใช้ยังไง</h3>
       <ol class="small" style="margin:0;padding-left:18px;line-height:1.9">
         <li>เปิดระบบทะเบียน <b>portal.udru.ac.th</b> ดูเกรดของตัวเอง</li>
-        <li>มาที่หน้า <b>กรอกเกรด</b> แล้วเลือกเกรดของแต่ละวิชาตามที่ได้จริง</li>
-        <li>วิชาที่ยังไม่ได้เรียน ปล่อยว่างไว้</li>
+        <li>สั่งพิมพ์ใบแจ้งผลการเรียน แล้วเลือก <b>บันทึกเป็น PDF</b> (ทำทุกภาคเรียนที่เรียนมา)</li>
+        <li>มาที่หน้า <b>กรอกเกรด</b> อัปโหลดไฟล์ PDF ทีละภาค ระบบจะดึงรหัสวิชา เกรด และภาคเรียนให้เอง</li>
         <li>ดูผลที่หน้า <b>ผลเช็คจบ</b> — ระบบบอกว่าเหลือกี่หน่วยกิต ต้องลงวิชาอะไรอีกบ้าง</li>
       </ol>
       <div class="note" style="margin-top:14px">
@@ -227,8 +227,8 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 <!-- 2) กรอกเกรด -->
 <section class="page" id="p-fill">
   <div class="head">
-    <h2>กรอกเกรด</h2>
-    <p>เลือกเกรดของวิชาที่เรียนผ่านมาแล้ว · วิชาที่ยังไม่เรียน เว้นว่างไว้ · ระบบบันทึกให้อัตโนมัติ</p>
+    <h2>นำเข้าผลการเรียน</h2>
+    <p>นำเข้าจาก <b>ไฟล์ PDF ใบแจ้งผลการเรียน</b> ของสำนักส่งเสริมวิชาการฯ เท่านั้น — อัปโหลดทีละภาคเรียนจนครบ · เกรดแก้ไขด้วยมือไม่ได้</p>
   </div>
   <div class="card"><div class="pad">
     <div class="big">
@@ -244,44 +244,21 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
       <b>ไฟล์ PDF ที่ดาวน์โหลดจากระบบทะเบียนอ่านได้ตรง 100%</b> (ดึงข้อความจริง ไม่ต้องเดาจากภาพ)</p>
     <div style="display:grid;grid-template-columns:1fr 150px auto;gap:8px;align-items:end">
       <label class="f" style="margin:0"><span>ไฟล์ PDF / ภาพ (JPG, PNG)</span><input type="file" id="imgFile" accept="application/pdf,image/*"></label>
-      <label class="f" style="margin:0"><span>ภาคเรียน</span><input id="iTerm" placeholder="2/2568"></label>
+      <label class="f" style="margin:0"><span>ภาคเรียน <span class="muted">(ถ้าอ่านจากไฟล์ไม่ได้)</span></span><input id="iTerm" placeholder="2/2568"></label>
       <button class="btn primary" id="btnOcr">อ่านไฟล์</button>
     </div>
     <div id="ocrMsg" class="small" style="margin-top:8px"></div>
   </div></div>
 
-  <div class="card"><div class="pad">
-    <h3>วางผลการเรียนทั้งภาคทีเดียว <span class="small muted" style="font-weight:400">— เร็วกว่าเลือกทีละวิชา</span></h3>
-    <p class="small muted" style="margin-top:0">คัดลอกตารางผลการเรียนจากระบบทะเบียน (ลากคลุมทั้งตาราง → Ctrl+C) แล้ววางในช่องนี้ ระบบจะอ่านรหัสวิชา หน่วยกิต และเกรดให้เอง</p>
-    <div style="display:grid;grid-template-columns:1fr 150px auto;gap:8px;align-items:end;margin-bottom:8px">
-      <div class="small muted">รองรับรูปแบบ เช่น <code>CA31102 หลักนิเทศศาสตร์ 3 B+</code> หรือคัดลอกมาทั้งแถว</div>
-      <label class="f" style="margin:0"><span>ภาคเรียนของข้อมูลชุดนี้</span><input id="pTerm" placeholder="1/2567"></label>
-      <button class="btn primary" id="btnParse">อ่านข้อมูล</button>
-    </div>
-    <textarea id="paste" rows="6" placeholder="วางข้อมูลที่คัดลอกมาตรงนี้..." style="width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;font-family:ui-monospace,monospace;font-size:13px"></textarea>
-    <div id="pPreview" style="margin-top:12px"></div>
-  </div></div>
+  <div id="pPreview" style="margin:0 0 14px"></div>
 
   <div id="lockBar"></div>
   <div id="fillList"></div>
 
   <div class="card"><div class="pad">
     <h3>วิชาอื่น ๆ ที่เรียน <span class="small muted" style="font-weight:400">(วิชาที่สัมพันธ์ · เลือกเสรี · วิชาข้ามกลุ่มเอก)</span></h3>
-    <div style="display:grid;grid-template-columns:1fr 1.8fr 62px 82px 92px 130px auto;gap:8px;align-items:end" id="addRow">
-      <label class="f" style="margin:0"><span>รหัสวิชา</span><input id="oCode" list="allCodes" placeholder="CA33203"></label>
-      <label class="f" style="margin:0"><span>ชื่อวิชา</span><input id="oName" placeholder="เว้นว่างได้"></label>
-      <label class="f" style="margin:0"><span>นก.</span><input id="oCr" type="number" min="1" max="9" placeholder="3"></label>
-      <label class="f" style="margin:0"><span>เกรด</span><select id="oGrade"></select></label>
-      <label class="f" style="margin:0"><span>ภาคเรียน</span><input id="oTerm" placeholder="1/2567"></label>
-      <label class="f" style="margin:0"><span>นับเป็นหมวด</span><select id="oSec">
-        <option value="">อัตโนมัติ</option>
-        <option value="RELATED">วิชาที่สัมพันธ์</option>
-        <option value="FREE">เลือกเสรี</option>
-      </select></label>
-      <button class="btn primary" id="btnAddOther">เพิ่ม</button>
-    </div>
-    <datalist id="allCodes"></datalist>
-    <div style="margin-top:12px" id="otherList"></div>
+    <p class="small muted" style="margin-top:0">วิชาเหล่านี้มาจากไฟล์ผลการเรียนเช่นกัน — เปลี่ยนได้เฉพาะ <b>"นับเป็นหมวด"</b> ว่าจะให้นับเป็นวิชาที่สัมพันธ์หรือเลือกเสรี</p>
+    <div id="otherList"></div>
   </div></div>
 </section>
 
@@ -358,6 +335,7 @@ const NEED_TOTAL=128, NEED_GPA=2.00;
 const KEY="udru_selfcheck_v1";
 let DB=(()=>{try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}
   return {me:{id:"",name:"",track:"JN",year:""},grades:[],logos:{uni:"",fac:"",prog:""}};})();
+DB.grades.forEach(r=>{ if(!r.src) r.src="manual"; });
 const save=()=>localStorage.setItem(KEY,JSON.stringify(DB));
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -417,8 +395,6 @@ document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{
 
 /* ================= 1) ข้อมูลของฉัน ================= */
 $("#mTrack").innerHTML=Object.keys(TRACKS).map(k=>`<option value="${k}">${TRACKS[k].name}</option>`).join("");
-$("#oGrade").innerHTML=[...Object.keys(GP),...OTHERG].map(g=>`<option>${g}</option>`).join("");
-$("#allCodes").innerHTML=Object.keys(INDEX).map(c=>`<option value="${c}">${INDEX[c].name}</option>`).join("");
 /* ---- รูปนักศึกษา: ครอบเป็นสี่เหลี่ยมจัตุรัส ย่อ 256px แล้วบีบอัดจนเล็กกว่า ~40KB ---- */
 function compressPhoto(file,box=256,limit=40000){
   return new Promise((res,rej)=>{
@@ -513,29 +489,35 @@ function printLogos(){
 }
 
 /* ================= 2) กรอกเกรด ================= */
-const GOPTS=`<option value="">—</option>`+[...Object.keys(GP),...OTHERG].map(g=>`<option>${g}</option>`).join("");
 function renderLock(){
-  const on=!!DB.lock;
-  $("#lockBar").innerHTML=`<div class="card"><div class="pad" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-    <span style="font-size:20px">${on?"🔒":"✏️"}</span>
-    <div style="flex:1;min-width:220px">
-      <div style="font-weight:600">${on?"เกรดถูกล็อกไว้ตามไฟล์ผลการเรียน":"โหมดกรอกเกรดเอง"}</div>
-      <div class="small muted">${on
-        ? "แก้ไขไม่ได้ เพื่อให้ผลตรงกับใบแจ้งผลการเรียนที่นำเข้ามา"
-        : "เลือกเกรดได้เอง — เมื่อกรอกครบแล้วแนะนำให้กดล็อกไว้ กันแก้ผิดโดยไม่ตั้งใจ"}</div>
+  const nFile=DB.grades.filter(r=>r.src==="file").length;
+  const nOld=DB.grades.filter(r=>r.src!=="file").length;
+  $("#lockBar").innerHTML=`<div class="card"><div class="pad">
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <span style="font-size:20px">🔒</span>
+      <div style="flex:1;min-width:240px">
+        <div style="font-weight:600">เกรดทั้งหมดมาจากไฟล์ใบแจ้งผลการเรียนเท่านั้น — แก้ไขด้วยมือไม่ได้</div>
+        <div class="small" style="margin-top:4px">
+          <span class="pill ok">จากไฟล์ทะเบียน ${nFile} วิชา</span>
+          ${nOld?`<span class="pill bad" style="margin-left:6px">ข้อมูลเก่า ${nOld} วิชา</span>`:""}
+        </div>
+      </div>
+      ${DB.grades.length?`<button class="btn danger" id="btnWipeGrades">ล้างผลการเรียนทั้งหมด</button>`:""}
     </div>
-    <button class="btn ${on?"":"primary"}" id="btnLock">${on?"ปลดล็อกเพื่อแก้ไข":"ล็อกเกรด"}</button>
+    ${nOld?`<div class="note" style="margin-top:10px;background:#FDECEC;border-color:#F0C9C9">
+      <b>พบข้อมูลเก่า ${nOld} วิชา</b> ที่ค้างมาจากระบบเวอร์ชันก่อน (ไม่มีภาคเรียน และยังไม่ได้ยืนยันจากไฟล์)<br>
+      กรุณากด <b>ล้างผลการเรียนทั้งหมด</b> แล้ว <b>อัปโหลดไฟล์ PDF ใบแจ้งผลการเรียนใหม่ทีละภาค</b> ระบบจะดึงเกรดและภาคเรียนให้เองครบถ้วน
+    </div>`:""}
   </div></div>`;
-  $("#btnLock").onclick=()=>{
-    if(!DB.lock && !confirm("ล็อกเกรดไว้ ไม่ให้แก้ไขโดยไม่ตั้งใจใช่ไหม?")) return;
-    if(DB.lock && !confirm("ปลดล็อกเพื่อแก้เกรดเอง? ผลอาจไม่ตรงกับใบแจ้งผลการเรียน")) return;
-    DB.lock=!DB.lock; save(); renderAll();
+  const w=$("#btnWipeGrades");
+  if(w) w.onclick=()=>{
+    if(!confirm("ล้างผลการเรียนทั้งหมด แล้วเริ่มนำเข้าจากไฟล์ PDF ใหม่?")) return;
+    DB.grades=[]; save(); renderAll();
   };
 }
 function renderFill(){
   const track=DB.me.track||"JN";
   renderLock();
-  const locked=!!DB.lock;
   const a=audit();
   $("#fillCredit").textContent=a.earned;
   $("#fillGpa").textContent=a.gpa===null?"—":a.gpa.toFixed(2);
@@ -557,30 +539,18 @@ function renderFill(){
       </div>
       ${list.map(c=>{
         const g=gr(c[0]),v=g?g.grade:"",t=g?(g.term||""):"";
+        const file = g && g.src==="file";
         const cls=v?((v in GP&&v!=="F")?"done":"fail"):"";
-        const gCell = locked
-          ? `<div class="g">${v?`<span class="pill ${(v in GP&&v!=="F")?"ok":"bad"}">${esc(v)}</span>`:`<span class="small muted">—</span>`}</div>`
-          : `<select class="g" data-code="${c[0]}" data-name="${esc(c[1])}" data-cr="${c[2]}">${
-              GOPTS.replace(`<option>${v}</option>`,`<option selected>${v}</option>`)}</select>`;
-        const tCell = locked
-          ? `<div class="t small muted">${esc(t||"—")}</div>`
-          : `<input class="t" data-term="${c[0]}" value="${esc(t)}" placeholder="ภาคเรียน">`;
         return `<div class="crow ${cls}">
           <div class="cd">${c[0]}</div>
           <div class="cn">${esc(c[1])}</div>
           <div class="cc">${c[2]}</div>
-          ${gCell}${tCell}
+          <div class="g">${v
+            ? `<span class="pill ${(v in GP&&v!=="F")?"ok":"bad"}" title="${file?"จากไฟล์ทะเบียน":"ข้อมูลเก่า ยังไม่ยืนยันจากไฟล์"}">${file?"🔒 ":"⚠️ "}${esc(v)}</span>`
+            : `<span class="small muted">ยังไม่เรียน</span>`}</div>
+          <div class="t small muted">${esc(t||"—")}</div>
         </div>`;}).join("")}
     </div></div>`;}).join("");
-
-  $("#fillList").querySelectorAll("select[data-code]").forEach(sl=>sl.onchange=()=>{
-    setGrade(sl.dataset.code,sl.dataset.name,+sl.dataset.cr,sl.value,
-      $(`#fillList input[data-term="${sl.dataset.code}"]`).value);
-    renderAll();
-  });
-  $("#fillList").querySelectorAll("input[data-term]").forEach(ip=>ip.onchange=()=>{
-    const g=gr(ip.dataset.term); if(g){g.term=ip.value.trim();save();}
-  });
 
   /* วิชาอื่น ๆ */
   const others=DB.grades.filter(r=>{const i=INDEX[r.code];return !i||(i.track&&i.track!==track);});
@@ -590,16 +560,16 @@ function renderFill(){
     others.map(r=>`<tr>
       <td><b>${esc(r.code)}</b></td><td>${esc(r.name||INDEX[r.code]?.name||"—")}</td>
       <td class="num">${r.credits}</td>
-      <td><span class="pill ${(r.grade in GP&&r.grade!=="F")?"ok":"bad"}">${esc(r.grade)}</span></td>
+      <td><span class="pill ${(r.grade in GP&&r.grade!=="F")?"ok":"bad"}">${r.src==="file"?"🔒 ":""}${esc(r.grade)}</span></td>
       <td class="small muted">${esc(r.term||"—")}</td>
       <td><select data-sec="${esc(r.code)}" style="width:132px;padding:3px 6px">
         <option value="" ${!r.bucket?"selected":""}>อัตโนมัติ (${esc(secOf(r.code))})</option>
         <option value="RELATED" ${r.bucket==="RELATED"?"selected":""}>วิชาที่สัมพันธ์</option>
         <option value="FREE" ${r.bucket==="FREE"?"selected":""}>เลือกเสรี</option>
       </select></td>
-      <td>${locked?"":`<button class="btn sm danger" data-rm="${esc(r.code)}">ลบ</button>`}</td></tr>`).join("")}</tbody></table>
+      <td>${r.src==="file"?`<span class="small muted">จากไฟล์</span>`:`<button class="btn sm danger" data-rm="${esc(r.code)}">ลบข้อมูลเก่า</button>`}</td></tr>`).join("")}</tbody></table>
       <div class="note" style="margin-top:10px">ถ้าระบบจัดหมวดผิด เช่น วิชาที่ลงเป็น <b>เลือกเสรี</b> ถูกนับเป็นวิชาที่สัมพันธ์ ให้เปลี่ยนในช่อง "นับเป็นหมวด" ได้เลย (แก้ได้แม้เกรดถูกล็อก)</div>`
-    :`<p class="small muted" style="margin:0">ยังไม่มีวิชาอื่น — วิชาที่สัมพันธ์ (9 นก.) และเลือกเสรี (6 นก.) เพิ่มได้ที่ช่องด้านบน</p>`;
+    :`<p class="small muted" style="margin:0">ยังไม่มีวิชานอกแผน — จะขึ้นเองเมื่อนำเข้าไฟล์ผลการเรียนที่มีวิชาที่สัมพันธ์ (9 นก.) หรือเลือกเสรี (6 นก.)</p>`;
   $("#otherList").querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{
     DB.grades=DB.grades.filter(g=>g.code!==b.dataset.rm);save();renderAll();});
   $("#otherList").querySelectorAll("[data-sec]").forEach(sl=>sl.onchange=()=>{
@@ -607,26 +577,18 @@ function renderFill(){
     if(sl.value) g.bucket=sl.value; else delete g.bucket;
     save(); renderAll();});
 }
-function setGrade(code,name,cr,grade,term){
+function setGrade(code,name,cr,grade,term,src){
   const i=DB.grades.findIndex(g=>g.code===code);
-  if(!grade){ if(i>=0)DB.grades.splice(i,1); }
-  else if(i>=0){ DB.grades[i].grade=grade; DB.grades[i].term=term||DB.grades[i].term||""; if(cr) DB.grades[i].credits=cr; }
-  else DB.grades.push({code,name,credits:cr,grade,term:term||""});
+  const source=src||"manual";
+  if(!grade){ if(i>=0 && DB.grades[i].src!=="file") DB.grades.splice(i,1); }
+  else if(i>=0){
+    if(DB.grades[i].src==="file" && source!=="file") return;   /* เกรดจากไฟล์ ห้ามแก้ด้วยมือ */
+    DB.grades[i].grade=grade; DB.grades[i].term=term||DB.grades[i].term||"";
+    if(cr) DB.grades[i].credits=cr; DB.grades[i].src=source;
+  }
+  else DB.grades.push({code,name,credits:cr,grade,term:term||"",src:source});
   save();
 }
-$("#btnAddOther").onclick=()=>{
-  const code=$("#oCode").value.trim().toUpperCase();
-  if(!code)return alert("กรอกรหัสวิชา");
-  if(gr(code))return alert("มีวิชานี้อยู่แล้ว");
-  const i=INDEX[code];
-  setGrade(code,$("#oName").value.trim()||i?.name||"",+$("#oCr").value||i?.credit||3,$("#oGrade").value,$("#oTerm").value.trim());
-  const b=$("#oSec").value, row=gr(code);
-  if(row){ if(b) row.bucket=b; else delete row.bucket; }
-  save();
-  $("#oCode").value="";$("#oName").value="";$("#oCr").value="";
-  renderAll();
-};
-
 /* ---- อ่านข้อมูล: วางข้อความ / อ่านจากภาพ ---- */
 const GRADE_RE=/^(A|B\+|B|C\+|C|D\+|D|F|W|I|S|U)$/;
 const ALLG=[...Object.keys(GP),...OTHERG];
@@ -739,18 +701,17 @@ function showPreview(out,bad,term,src){
   $("#btnCommit").onclick=()=>{
     const ok=PENDING.filter(r=>r.grade);
     if(!ok.length) return alert("ยังไม่ได้เลือกเกรดสักวิชา");
-    ok.forEach(r=>setGrade(r.code,r.name,r.credits,r.grade,r.term||term));
+    ok.forEach(r=>{
+      const i=DB.grades.findIndex(g=>g.code===r.code);
+      if(i>=0) DB.grades.splice(i,1);                       /* เขียนทับของเดิม */
+      DB.grades.push({code:r.code,name:r.name,credits:r.credits,grade:r.grade,term:r.term||term,src:"file",bucket:r.bucket});
+    });
     DB.lock=true; save();
-    $("#paste").value=""; $("#pPreview").innerHTML=""; PENDING=[];
+    $("#pPreview").innerHTML=""; PENDING=[];
     renderAll(); alert(`บันทึกแล้ว ${ok.length} วิชา — ระบบล็อกเกรดไว้ให้ตรงกับไฟล์แล้ว`);
   };
   $("#btnCancelPaste").onclick=()=>{ $("#pPreview").innerHTML=""; PENDING=[]; };
 }
-$("#btnParse").onclick=()=>{
-  const {out,bad}=parseText($("#paste").value);
-  showPreview(out,bad,$("#pTerm").value.trim(),"");
-};
-
 /* ---- อ่านไฟล์: PDF (ข้อความจริง) หรือ ภาพ (OCR) ---- */
 const PDFJS_SRC="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js";
 const PDFJS_WORKER="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
@@ -911,6 +872,10 @@ function renderResult(){
   <div class="print-only print-head">${printLogos()}<b>ใบตรวจสอบสำเร็จการศึกษา (เบื้องต้น)</b>
     <span>สาขาวิชานิเทศศาสตร์ คณะวิทยาการจัดการ มหาวิทยาลัยราชภัฏอุดรธานี</span></div>
 
+  ${(()=>{const nm=DB.grades.filter(r=>r.src!=="file").length,nf=DB.grades.filter(r=>r.src==="file").length;
+    return `<div class="note" style="margin-bottom:12px;${nm?"":"background:#E4F5EB;border-color:#A9DCC0"}">
+      <b>ที่มาของข้อมูล:</b> นำเข้าจากไฟล์ใบแจ้งผลการเรียน ${nf} วิชา${nm?` · <b style="color:var(--red)">กรอกเอง ${nm} วิชา (ยังไม่ยืนยันจากระบบทะเบียน)</b>`:" — ข้อมูลทั้งหมดมาจากไฟล์ทะเบียน"}
+    </div>`;})()}
   <div class="card"><div class="pad">
     <div class="big">
       ${DB.me.photo?`<img src="${DB.me.photo}" class="avatar-md" alt="">`:""}
@@ -947,7 +912,9 @@ function renderResult(){
   </div>
 
   <p class="small muted">ผลนี้เป็นการตรวจสอบเบื้องต้นจากข้อมูลที่นักศึกษากรอกเอง ผลอย่างเป็นทางการยึดตามสำนักส่งเสริมวิชาการและงานทะเบียน</p>
-  <div class="print-credit">ระบบสารสนเทศเช็คผลการสำเร็จการศึกษา — พัฒนาโดย ผศ.ดร.เสกสรร สายสีสด สาขาวิชานิเทศศาสตร์ คณะวิทยาการจัดการ มหาวิทยาลัยราชภัฏอุดรธานี</div>`;
+  <div class="print-credit">${(()=>{const nm=DB.grades.filter(r=>r.src!=="file").length;
+    return nm?`<b>คำเตือน: มี ${nm} รายวิชาที่นักศึกษากรอกเอง ไม่ได้นำเข้าจากใบแจ้งผลการเรียน</b><br>`:"ข้อมูลทั้งหมดนำเข้าจากใบแจ้งผลการเรียน<br>";})()}
+    ระบบสารสนเทศเช็คผลการสำเร็จการศึกษา — พัฒนาโดย ผศ.ดร.เสกสรร สายสีสด สาขาวิชานิเทศศาสตร์ คณะวิทยาการจัดการ มหาวิทยาลัยราชภัฏอุดรธานี</div>`;
 }
 $("#btnPrint").onclick=()=>window.print();
 $("#btnCsv").onclick=()=>{
